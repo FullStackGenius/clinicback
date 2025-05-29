@@ -17,7 +17,9 @@ return new class extends Migration
             $table->foreign('user_one_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('user_two_id')->nullable();
             $table->foreign('user_two_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unique(['user_one_id', 'user_two_id']);
+             $table->unsignedBigInteger('contract_id')->nullable();
+            $table->foreign('contract_id')->references('id')->on('contracts')->onDelete('cascade');
+            // $table->unique(['user_one_id', 'user_two_id']);
             $table->timestamps();
         });
     }

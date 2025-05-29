@@ -76,7 +76,10 @@
                                                         @endif
                                                     </td>
                                                     <td class="d-flex gap-2">
-                                                        <a href="{{ route('client.show', $clinetList->id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a>
+                                                        <a href="{{ route('client.show', $clinetList->id) }}" class="btn btn-sm btn-warning"><i class="fas fa-eye"></i> View</a>
+                                                        <a href="{{ route('client.edit', $clinetList->id) }}" class="btn btn-success btn-sm">
+                                                            <i class="fas fa-edit"></i> Edit
+                                                        </a>
                                                         <a href="{{ route('jobs.index', $clinetList->id) }}" class="btn btn-sm btn-primary"><i class="fas fa-briefcase"></i> View Jobs</a>
                                                         
                                                         <form id="deleteUser{{ $clinetList->id }}" action="{{ route('client.destroy', $clinetList->id) }}" method="POST">

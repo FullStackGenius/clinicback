@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('chat_id')->references('id')->on('chats')->onDelete('cascade');
             $table->unsignedBigInteger('sender_id')->nullable();
             $table->foreign('sender_id')->references('id')->on('users')->onDelete('cascade');
-            $table->text('message');
+            $table->text('message')->nullable();
             $table->string('file_path')->nullable(); // For audio, images, videos, documents
             $table->string('file_type')->nullable();
             $table->boolean('is_read')->default(false);

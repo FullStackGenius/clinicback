@@ -19,6 +19,9 @@ use App\Models\Language;
 use App\Models\LanguageProficiency;
 use App\Models\Project;
 use App\Models\ProjectType;
+use App\Models\Proposal;
+use App\Models\ResourceCategory;
+use App\Models\ResourceData;
 use App\Models\Setting;
 use App\Models\SubCategory;
 use App\Models\Testimonial;
@@ -77,7 +80,7 @@ class PageContentController extends BaseController
     public function getCountryData()
     {
         try {
-            $data['countries'] = Country::where('status',ProjectConstants::STATUS_ACTIVE)->select(['id', 'name'])->get();
+            $data['countries'] = Country::where('status', ProjectConstants::STATUS_ACTIVE)->select(['id', 'name'])->get();
             return  $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
             Log::channel('daily')->info('getCountryData  Api log \n: ' . $e->getMessage());
@@ -100,7 +103,7 @@ class PageContentController extends BaseController
     public function getLanguagePageData()
     {
         try {
-            $data['language'] = Language::where('status',ProjectConstants::STATUS_ACTIVE)->select(['id', 'name',])->get();
+            $data['language'] = Language::where('status', ProjectConstants::STATUS_ACTIVE)->select(['id', 'name',])->get();
             $data['LanguageProficiency'] = LanguageProficiency::select(['id', 'name',])->get();
             return  $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
@@ -153,26 +156,44 @@ class PageContentController extends BaseController
             }
             $perPage = $request->get('per_page', 10); // Optional: Set a default of 10 items per page if not provided
             $sortOrder = $request->get('sort_by', 'newest');
-            $data['freelancers'] = User::select('id', 'name', 'last_name', 'email', 'role_id', 'country_id','profile_image')
+            $data['freelancers'] = User::select('id', 'name', 'last_name', 'email', 'role_id', 'country_id', 'profile_image')
                 ->with([
-                    'userDetails'=> function ($query) {
+                    'userDetails' => function ($query) {
                         $query->select(
-                            "your_experience_id", "your_goal_id", "user_id", "about_yourself", "street_address", "state_provience", "city", "zip_postalcode", "phone_number", "apt_suite", "date_of_birth", "hourly_rate", "services_rate", "income_per_hour", "created_at", "updated_at", "next_step", "completed_steps",
+                            "your_experience_id",
+                            "your_goal_id",
+                            "user_id",
+                            "about_yourself",
+                            "street_address",
+                            "state_provience",
+                            "city",
+                            "zip_postalcode",
+                            "phone_number",
+                            "apt_suite",
+                            "date_of_birth",
+                            "hourly_rate",
+                            "services_rate",
+                            "income_per_hour",
+                            "created_at",
+                            "updated_at",
+                            "next_step",
+                            "completed_steps",
                             DB::raw('LEFT(profile_headline, 30) as profile_headline')
                         );
                     },
                     'skills' => function ($query) {
-                        $query->select('skills.id', 'skills.name','skills.skill_slug')->take(3);; // Select necessary skill fields
+                        $query->select('skills.id', 'skills.name', 'skills.skill_slug')->take(3);; // Select necessary skill fields
                     },
                     'subCategory' => function ($query) {
-                        $query->select('sub_categories.id', 'sub_categories.name', 'sub_categories.slug','sub_categories.category_id')->take(3);; // Select necessary subcategory fields
+                        $query->select('sub_categories.id', 'sub_categories.name', 'sub_categories.slug', 'sub_categories.category_id')->take(3);; // Select necessary subcategory fields
                     },
                     'ratings' => function ($query) {
                         // Calculate the average rating and group by user_id
                         $query->selectRaw('user_id, AVG(rating_number) as average_rating')
                             ->groupBy('user_id');  // This is the critical part to avoid the SQL error
                     },
-                    'getHowLikeToWork','subCategory.getCategory'
+                    'getHowLikeToWork',
+                    'subCategory.getCategory'
                 ])
                 ->where('user_status', ProjectConstants::STATUS_ACTIVE)
                 ->where('role_id', ProjectConstants::ROLE_FREELANCE)
@@ -223,11 +244,11 @@ class PageContentController extends BaseController
                 })
                 ->when($sortOrder, function ($query, $sortOrder) {
                     if ($sortOrder === 'newest') {
-                         $query->orderBy('id','desc');
-                    }elseif($sortOrder === 'oldest'){
-                        $query->orderBy('id','asc');
-                    }else{
-                        $query->orderBy('id','asc');
+                        $query->orderBy('id', 'desc');
+                    } elseif ($sortOrder === 'oldest') {
+                        $query->orderBy('id', 'asc');
+                    } else {
+                        $query->orderBy('id', 'asc');
                     }
                 })
                 ->withCount(['contracts as completed_jobs_count' => function ($query) {
@@ -257,19 +278,24 @@ class PageContentController extends BaseController
             $data['category_subcategory_data_under_search_section'] =  Category::select(['id', 'name', 'slug'])->where('category_status', ProjectConstants::STATUS_ACTIVE)->with('subCategories:id,name,category_id,slug')->get();
             $data['testimonials_section'] = Testimonial::where('status', ProjectConstants::STATUS_ACTIVE)
                 ->get();
-                $data['real_accountants_section'] = User::with([
-                    'userDetails',
-                    'ratings' => function ($query) {
-                        $query->selectRaw('user_id, AVG(rating_number) as average_rating')
-                            ->groupBy('user_id');  // This is the critical part to avoid the SQL error
-                    }
-                ])->where('role_id', ProjectConstants::ROLE_FREELANCE)
+            $data['real_accountants_section'] = User::with([
+                'userDetails'
+            ])->where('role_id', ProjectConstants::ROLE_FREELANCE)
                 ->where('user_status', ProjectConstants::STATUS_ACTIVE)
-                ->take(8)->get();
+                ->take(8)->orderBy('id','desc')->get();
+            // $data['real_accountants_section'] = User::with([
+            //     'userDetails',
+            //     'ratings' => function ($query) {
+            //         $query->selectRaw('user_id, AVG(rating_number) as average_rating')
+            //             ->groupBy('user_id');  // This is the critical part to avoid the SQL error
+            //     }
+            // ])->where('role_id', ProjectConstants::ROLE_FREELANCE)
+            //     ->where('user_status', ProjectConstants::STATUS_ACTIVE)
+            //     ->take(8)->get();
             $data['get_help_today_section_skill'] = Skill::select(['id', 'name', 'skill_slug'])->where('status', ProjectConstants::STATUS_ACTIVE)->get();
             $data['account_section_first'] = WebsitePageContent::where('section_name', 'home-account-section')->first();
             $data['account_section_first'] = WebsitePageContent::where('section_name', 'home-account-section')->first();
-            $data['flexible_section_section'] = WebsitePageContent::select('title', 'content','content_image')->where('section_name', 'flexible-account-section')->first();
+            $data['flexible_section_section'] = WebsitePageContent::select('title', 'content', 'content_image')->where('section_name', 'flexible-account-section')->first();
             $data['contract_section_section'] = WebsitePageContent::select('title', 'content')->where('section_name', 'contract-section-data')->get();
             return  $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
@@ -518,7 +544,7 @@ class PageContentController extends BaseController
     public function getDataWithStepProfile($stepName, $user)
     {
         if ($stepName == 'step1') {
-            $userData = User::select('id', 'name','last_name','profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')
                 ->with(['resume' => function ($query) {
                     $query->select('id', 'user_id', 'resume_url');
                 }])
@@ -532,19 +558,19 @@ class PageContentController extends BaseController
         }
 
         if ($stepName == 'step2') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')->with('subCategory:id,name,category_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')->with('subCategory:id,name,category_id')
                 ->withAvg('ratings', 'rating_number')
                 ->find($user->id);
             return $details =  $userData;
         }
         if ($stepName == 'step3') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')->with('skills:id,name')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')->with('skills:id,name')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step4') {
-            $userData = User::select('id', 'name', 'last_name','profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')
                 ->withAvg('ratings', 'rating_number')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'profile_headline');
@@ -554,25 +580,25 @@ class PageContentController extends BaseController
         }
 
         if ($stepName == 'step5') {
-            $userData = User::select("id", "name", 'last_name','profile_image', 'country_id', 'role_id')->with('userExperiences')
+            $userData = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')->with('userExperiences')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step6') {
-            $userData = User::select("id", "name",'last_name', 'profile_image', 'country_id', 'role_id')->with('userEducation')
+            $userData = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')->with('userEducation')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step7') {
-            $data['language'] = User::select("id", "name",'last_name', 'profile_image', 'country_id', 'role_id')->with('userLanguage')
+            $data['language'] = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')->with('userLanguage')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $data;
         }
 
         if ($stepName == 'step8') {
-            $userData = User::select('id', 'name', 'last_name','profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'about_yourself');
                 }])
@@ -582,7 +608,7 @@ class PageContentController extends BaseController
         }
 
         if ($stepName == 'step9') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id','star_rating')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'hourly_rate', 'services_rate', 'income_per_hour');
                 }])
@@ -593,7 +619,7 @@ class PageContentController extends BaseController
 
 
         if ($stepName == 'step10') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id' ,'star_rating')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'date_of_birth', 'street_address', 'apt_suite', 'city', 'state_provience', 'zip_postalcode', 'phone_number');
                 }])
@@ -623,18 +649,20 @@ class PageContentController extends BaseController
         }
     }
 
-    public function allProjetList()
+    public function allProjetList(Request $request)
     {
         try {
 
-            $projects = Project::with(['projectSkill', 'projectCategory', 'projectSubCategory', 'projectScope', 'projectDuration', 'projectExperience'])->get();
-            $projects = $projects->map(function ($project) {
-                $project->accounting_certifications = $project->projectSkill;
-                $project->accounting_sectors = $project->projectCategory;
-                $project->accounting_skills = $project->projectSubCategory;
-                unset($project->projectSkill, $project->projectCategory, $project->projectSubCategory);
-                return $project;
-            });
+            $projects = Project::with(['clientUser', 'projectSkill', 'projectCategory', 'projectSubCategory', 'projectScope', 'projectDuration', 'projectExperience', 'projectProposal' => function ($query) {
+                $query->select('id', 'project_id', 'freelancer_id'); // Include project_id to maintain relationship
+            }])->where('project_status', 3)->orderBy('id', 'desc')->paginate($request->per_page);
+            // $projects = $projects->map(function ($project) {
+            //     $project->accounting_certifications = $project->projectSkill;
+            //     $project->accounting_sectors = $project->projectCategory;
+            //     $project->accounting_skills = $project->projectSubCategory;
+            //     unset($project->projectSkill, $project->projectCategory, $project->projectSubCategory);
+            //     return $project;
+            // });
             $data['projects'] = $projects;
             return  $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
@@ -659,12 +687,104 @@ class PageContentController extends BaseController
     {
 
         try {
-           
+
             $data['learn_how_to_hire'] = WebsitePageContent::select('content_image', 'content')->where('section_name', 'learn-how-to-hire')->first();
             return  $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
             Log::error('Error in getLearnHowToHirePageContent: ' . $e->getMessage());
             return $this->sendCommonResponse(true, 'error', '', 'something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getFreelancerProjectProposalData(Request $request)
+    {
+
+        try {
+            $freelanceId = $request->freelancer_id;
+            $proposals =  Proposal::select(['project_id', 'freelancer_id'])->where('freelancer_id', $freelanceId)->get();
+            $data['proposals'] = $proposals;
+            return  $this->sendCommonResponse('false', "", $data, '', '', ProjectConstants::HTTP_OK);
+        } catch (ValidationException $e) {
+            return $this->sendCommonResponse(true, 'validation', '', $e->errors(), '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Exception $e) {
+            Log::channel('daily')->info('getFreelancerProjectProposal  Api log \n: ' . $e->getMessage());
+            return $this->sendCommonResponse(true, 'error', '', 'something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public function getResources(Request $request)
+    {
+
+        try {
+
+            // $search = $request->q;
+            // $data['resource'] = ResourceData::with('resourceCategory')->paginate($request->per_page);
+            $search = $request->q;
+            $category = $request->category;
+            $sortBy = $request->sort_by; // Fixed variable name
+
+            $query = ResourceData::with('resourceCategory');
+
+            // Search logic (only if $search has value)
+            if (!empty($search)) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'LIKE', "%{$search}%")
+                        ->orWhereHas('resourceCategory', function ($q) use ($search) {
+                            $q->where('name', 'LIKE', "%{$search}%");
+                        });
+                });
+            }
+            // Filter by category if provided
+            if (!empty($category)) {
+                $query->where('resource_category_id', $category);
+            }
+
+            // Sorting (e.g., by title, created_at, etc.)
+            if (!empty($sortBy)) {
+                $query->orderBy('id', $sortBy); // Change 'asc' to 'desc' if needed
+            }
+            $data['resource'] = $query->paginate($request->per_page);
+            $data['category'] =  ResourceCategory::where('status', ProjectConstants::STATUS_ACTIVE)->get();
+            return $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
+        } catch (\Exception $e) {
+            Log::error('Error in getFreelanceBySkill: ' . $e->getMessage());
+            return $this->sendCommonResponse(
+                true,
+                'error',
+                '',
+                'Something went wrong',
+                '',
+                ProjectConstants::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    public function getResourcesDetail(Request $request)
+    {
+
+        try {
+            $resourceId = $request->id;
+            $resourceData = ResourceData::with('resourceCategory')->find($resourceId);
+            $randomResources = ResourceData::with('resourceCategory')
+                ->where('id', '!=', $resourceId) // Exclude current resource
+                ->inRandomOrder() // Randomize the order
+                ->limit(3) // Get only 3 records
+                ->get();
+
+            $data['resource'] = (!empty($resourceData)) ? $resourceData : [];
+            $data['resrandomResourcesource'] = (!empty($randomResources)) ? $randomResources : [];
+            return $this->sendCommonResponse('false', "", $data, '', "", ProjectConstants::HTTP_OK);
+        } catch (\Exception $e) {
+            Log::error('Error in getFreelanceBySkill: ' . $e->getMessage());
+            return $this->sendCommonResponse(
+                true,
+                'error',
+                '',
+                'Something went wrong',
+                '',
+                ProjectConstants::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 }

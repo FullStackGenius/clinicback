@@ -10,10 +10,10 @@ class Project extends Model
 
     protected $fillable =  ['title', 'description', 'project_status', 'budget_type', 'hourly_from', 'hourly_to', 'fixed_rate', 'project_type_id',
      'user_id', 'project_scope_id', 'project_duration_id', 'project_experience_id','next_step','completed_steps'];
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
+    // protected $hidden = [
+    //     'created_at',
+    //     'updated_at',
+    // ];
    
 
     public function getProjectStatusLabelAttribute()
@@ -23,6 +23,7 @@ class Project extends Model
             2 => 'draft',
             3 => 'publish',
             4 => 'closed',
+            5 => 'assigned',
         ];
 
         return $statuses[$this->project_status] ?? 'Unknown'; // Default to 'Unknown' if no match
@@ -76,6 +77,10 @@ class Project extends Model
 
     public function contracts(){
         return $this->hasOne(Contract::class,'project_id','id');
+    }
+
+    public function projectProposal(){
+        return $this->hasMany(Proposal::class,'project_id','id');
     }
     
 }

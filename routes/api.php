@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ForgotpasswordController;
 use App\Http\Controllers\Api\FreelancerController;
 use App\Http\Controllers\Api\JobContractController;
 use App\Http\Controllers\Api\PageContentController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\RatingController;
@@ -22,6 +23,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', function (Request $request) {
         return $request->user();
     })->name('user');
+
+
+    Route::post('/stripe/account', [PaymentController::class, 'createAccount']);
+Route::post('/stripe/onboarding', [PaymentController::class, 'onboardingLink']);
+Route::get('/stripe/return', [PaymentController::class, 'return'])->name('stripe.return');
+Route::get('/stripe/refresh', [PaymentController::class, 'refresh'])->name('stripe.refresh');
+Route::post('/stripe/release', [PaymentController::class, 'releasePayment']);
+Route::post('payment-intent', [PaymentController::class, 'createPaymentIntent']);
+// Route::post('/contracts/release', [PaymentController::class, 'releaseToFreelancer']);
+Route::post('/contracts/payment-release-freelancer', [PaymentController::class, 'releasePaymentToFreelancer']);
+Route::get('/stripe/info', [PaymentController::class, 'getStripeAccountInfo']);
+Route::post('/contract-payment/store', [PaymentController::class, 'storeContractPaymentResponse']);
+Route::post('release-payment-to-freelancer', [PaymentController::class, 'releasePaymentToFreelancer'])->name('release-payment-to-freelancer');
+Route::post('/contract-balance', [PaymentController::class, 'getContractBalance'])->name('contract-balance');
+Route::post('/get-payment-transaction-detail', [PaymentController::class, 'getPaymentTransactionDetail'])->name('get-payment-transaction-detail');
+Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransaction'])->name('show-all-transaction');
 
     // ProfileController controoller
     Route::post('save-freelance-exp', [ProfileController::class, 'saveFreelanceExp'])->name('save-freelance-exp');
@@ -46,10 +63,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('get-user-step-data', [ProfileController::class, 'getUserStepData'])->name('get-user-step-data');
     Route::post('delete-freelancer-step-data', [ProfileController::class, 'deleteFreelancerStepData'])->name('delete-freelancer-step-data');
     Route::post('get-single-freelance-experience-education', [ProfileController::class, 'getSingleUserExperienceEducation'])
-    ->name('get-single-freelance-experience-education');
+        ->name('get-single-freelance-experience-education');
     Route::get('get-loggedin-user-info', [ProfileController::class, 'getLoggedInUserInfo'])->name('get-loggedin-user-info');
     Route::post('update-user-info', [ProfileController::class, 'updateUserInfo'])->name('update-user-info');
-    
+
     //ProfileController
     Route::prefix('project')->group(function () {
         Route::post('save-project-title', [ProjectController::class, 'saveProjectTitle'])->name('save-project-title');
@@ -58,32 +75,39 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('save-project-budget', [ProjectController::class, 'saveProjectBudget'])->name('save-project-budget');
         Route::post('save-project-work-scope', [ProjectController::class, 'saveProjectWorkScope'])->name('save-project-work-scope');
         Route::post('get-project-detail', [ProjectController::class, 'getProjectDetail'])->name('get-project-detail');
-       
+        Route::post('delete-your-project', [ProjectController::class, 'deleteYourJobProject'])->name('delete-your-project');
+        
         Route::post('save-project-type', [ProjectController::class, 'saveProjectType'])->name('save-project-type');
         Route::post('edit-project-details', [ProjectController::class, 'editProjectDetails'])->name('edit-project-details');
-         Route::get('client-project', [ProjectController::class, 'clientProjectList'])->name('client-project');
-         Route::post('get-project-step-form-data', [ProjectController::class, 'getProjectStepFormData'])->name('get-project-step-form-data');
+        Route::get('client-project', [ProjectController::class, 'clientProjectList'])->name('client-project');
+        Route::post('get-project-step-form-data', [ProjectController::class, 'getProjectStepFormData'])->name('get-project-step-form-data');
+        Route::get('get-project-proposal', [ProjectController::class, 'projectProposal'])->name('get-project-proposal');
+        Route::post('reject-project-proposal', [ProjectController::class, 'rejectProjectProposal'])->name('reject-project-proposal');
     });
     Route::prefix('jobs')->group(function () {
         Route::get('/', [JobContractController::class, 'getJobs'])->name('/');
         Route::post('response-to-proposal', [JobContractController::class, 'responseToProposal'])->name('response-to-proposal');
-
+        Route::post('get-contract-details', [JobContractController::class, 'getContractDetails'])->name('get-contract-details');
+        Route::post('make-milestone-payment', [JobContractController::class, 'makeMilestonePayment'])->name('make-milestone-payment');
+        Route::post('request-to-release-milestone-payment', [JobContractController::class, 'requestToReleaseMilestonePayment'])->name('request-to-release-milestone-payment');
+        
     });
 
     Route::post('/logout', [AuthenticationController::class, 'logout'])->name('logout');
-    Route::Post('send-project-proposal',[FreelancerController::class,'sendProjectProposal'])->name('send-project-proposal');
-    Route::get('get-freelancer-project-proposal',[FreelancerController::class,'getFreelancerProjectProposal'])->name('get-freelancer-project-proposal');
-    Route::get('get-freelancer-contract',[FreelancerController::class,'getFreelancerContract'])->name('get-freelancer-contract');
+    Route::Post('send-project-proposal', [FreelancerController::class, 'sendProjectProposal'])->name('send-project-proposal');
+    Route::Post('edit-project-proposal', [FreelancerController::class, 'editProjectProposal'])->name('edit-project-proposal');
+    Route::get('get-freelancer-project-proposal', [FreelancerController::class, 'getFreelancerProjectProposal'])->name('get-freelancer-project-proposal');
 
-    Route::post('give-rating',[RatingController::class,'giveRating'])->name('give-rating');
+    Route::get('get-freelancer-contract', [FreelancerController::class, 'getFreelancerContract'])->name('get-freelancer-contract');
+    Route::get('get-client-contract', [FreelancerController::class, 'getClientContract'])->name('get-client-contract');
+
+    Route::post('give-rating', [RatingController::class, 'giveRating'])->name('give-rating');
 
 
     Route::prefix('chat')->group(function () {
-        Route::get('start/{userId?}', [ChatController::class, 'startChat'])->name('chat.start');
+        Route::get('start/{userId?}/{contractId?}', [ChatController::class, 'startChat'])->name('chat.start');
         Route::post('send-message', [ChatController::class, 'sendMessage'])->name('chat.send-message');
     });
-
-
 });
 
 Route::get('account-type', [AuthenticationController::class, 'accountType'])->name('account-type');
@@ -107,6 +131,9 @@ Route::get('get-language-page-data', [PageContentController::class, 'getLanguage
 Route::get('all-project-list', [PageContentController::class, 'allProjetList'])->name('all-project-list');
 Route::get('get-project-type', [PageContentController::class, 'getProjectType'])->name('get-project-type');
 Route::get('get-learn-how-to-hire-page-data', [PageContentController::class, 'getLearnHowToHirePageContent'])->name('get-learn-how-to-hire-page-data');
+Route::post('get-freelancer-project-proposal-data', [PageContentController::class, 'getFreelancerProjectProposalData'])->name('get-freelancer-project-proposal-data');
+Route::get('get-resources', [PageContentController::class, 'getResources'])->name('get-resources');
+Route::get('resources-detail/{id}', [PageContentController::class, 'getResourcesDetail'])->name('resources-detail');
 
 
 

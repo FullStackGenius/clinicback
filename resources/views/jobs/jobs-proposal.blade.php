@@ -69,7 +69,7 @@
                                             <th style="width: 10px">#</th>
                                             <th>Freelancer</th>
                                             <th>Cover letter</th>
-                                            <th>Amount</th>
+                                            {{-- <th>Amount</th> --}}
                                             <th>Applied On</th>
                                             <th>Action</th>
                                         </tr>
@@ -98,7 +98,7 @@
                                                         @endif
                                                     </div>
                                                 </td>
-                                                <td class="text-end">{{ @$proposal->bid_amount }}</td>
+                                                {{-- <td class="text-end">{{ @$proposal->bid_amount }}</td> --}}
                                                 <td>{{ @$proposal->created_at }}</td>
                                                 <td class="text-center">
                                                     @if ($proposal->contract)
@@ -249,7 +249,7 @@
                         <div class="col-md-6">
                             <h5><b>Proposal Information</b></h5>
                             <hr style="border: 1px solid #007bff; width: 100px;">
-                            <p><strong>Bid Amount:</strong> <span id="bidAmount"></span></p>
+                            {{-- <p><strong>Bid Amount:</strong> <span id="bidAmount"></span></p> --}}
                             <p><strong>Status:</strong> <span id="proposalStatus"></span></p>
                         </div>
                         <div class="col-md-6">
@@ -368,21 +368,21 @@
                         if (fullDescription.length > maxLength) {
                             const truncatedDescription = fullDescription.substring(0,
                                 maxLength) + '...';
-                            $('#projectDescription').text(truncatedDescription);
+                            $('#projectDescription').html(truncatedDescription);
 
-                            $('#readMoreLessLink').show().text('Read More').off('click').on(
+                            $('#readMoreLessLink').show().html('Read More').off('click').on(
                                 'click',
                                 function() {
                                     if ($(this).text() === 'Read More') {
-                                        $('#projectDescription').text(fullDescription);
+                                        $('#projectDescription').html(fullDescription);
                                         $(this).text('Read Less');
                                     } else {
-                                        $('#projectDescription').text(truncatedDescription);
+                                        $('#projectDescription').html(truncatedDescription);
                                         $(this).text('Read More');
                                     }
                                 });
                         } else {
-                            $('#projectDescription').text(fullDescription);
+                            $('#projectDescription').html(fullDescription);
                             $('#readMoreLessLink').hide();
                         }
 

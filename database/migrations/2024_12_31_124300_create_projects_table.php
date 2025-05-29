@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title')->nullable();
             $table->text('description')->nullable();
-            $table->integer('project_status')->comment('1 - pending , 2 - draft , 3 - publish , 4 - closed')->default(1);
+            $table->integer('project_status')->comment('1 - pending , 2 - draft , 3 - publish , 4 - closed , 5 - assigned')->default(1);
             $table->integer('budget_type')->comment('1 - hourly , 2 - fixed')->nullable();
             $table->integer('hourly_from')->nullable();
             $table->integer('hourly_to')->nullable();

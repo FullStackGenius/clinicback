@@ -15,6 +15,9 @@ use App\Models\UserExperience;
 use App\Models\UserLanguage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\WebpEncoder;
 
 
 class ProfileController extends BaseController
@@ -173,7 +176,7 @@ class ProfileController extends BaseController
                 'user_like_to_work.*' => 'integer',
             ]);
             $user = Auth::user();
-           // $user->getHowLikeToWork()->sync($request->user_like_to_work);
+            // $user->getHowLikeToWork()->sync($request->user_like_to_work);
             $user->getHowLikeToWork()->updateOrCreate(
                 ['user_id' => $user->id],
                 ['how_like_to_work_id' => $request->user_like_to_work[0]]
@@ -213,39 +216,89 @@ class ProfileController extends BaseController
         }
     }
 
+    // public function saveProfileImage(Request $request)
+    // {
+
+    //     try {
+    //         $validated = $request->validate([
+    //             'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Max size: 2MB
+    //         ]);
+
+    //         // If validation passes, store the image in the 'public/user-image' folder
+    //         $image = $request->file('profile_image');
+    //         $imageName = Str::uuid() . '.' . $image->getClientOriginalExtension();
+
+    //         // Store the image in the storage folder
+    //         $path = $image->storeAs('user-image', $imageName, 'public');
+    //         $user = Auth::user();
+
+    //         if ($user->profile_image) {
+    //             Storage::disk('public')->delete('user-image/' . $user->profile_image);
+    //         }
+    //         $id = $user->id;
+
+    //         User::where('id', $id)->update([
+    //             'profile_image' => $imageName
+    //         ]);
+
+    //         $user = User::find($id);
+    //         $data['details'] = $user;
+    //         return  $this->sendCommonResponse('false', "", $data, 'data save successfully', '', ProjectConstants::HTTP_OK);
+    //     } catch (ValidationException $e) {
+    //         return $this->sendCommonResponse(true, 'validation', '', $e->errors(), '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+    //     } catch (\Exception $e) {
+    //         Log::channel('daily')->info('saveProfileImage  Api log \n: ' . $e->getMessage());
+    //         return $this->sendCommonResponse(true, 'error', '', 'something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
+
     public function saveProfileImage(Request $request)
     {
-
         try {
+            // Validate image input
             $validated = $request->validate([
                 'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Max size: 2MB
             ]);
 
-            // If validation passes, store the image in the 'public/user-image' folder
-            $image = $request->file('profile_image');
-            $imageName = Str::uuid() . '.' . $image->getClientOriginalExtension();
-
-            // Store the image in the storage folder
-            $path = $image->storeAs('user-image', $imageName, 'public');
+            // Get the authenticated user
             $user = Auth::user();
-
-            if ($user->profile_image) {
-                Storage::disk('public')->delete('user-image/' . $user->profile_image);
+            if (!$user) {
+                return $this->sendCommonResponse(true, 'error', '', 'User not authenticated', '', ProjectConstants::HTTP_UNAUTHORIZED);
             }
-            $id = $user->id;
 
-            User::where('id', $id)->update([
-                'profile_image' => $imageName
-            ]);
+            // Initialize Intervention Image
+            $manager = new ImageManager(new Driver());
 
-            $user = User::find($id);
+            // Get uploaded image
+            $image = $request->file('profile_image');
+
+            // Generate a unique filename (WebP format)
+            $imageName = Str::uuid() . '.webp';
+
+            // Process & encode image to WebP
+            $processedImage = $manager->read($image->getRealPath())
+                ->encode(new WebpEncoder(quality: 80));
+
+            // Store the processed image
+            Storage::disk('public')->put("user-image/{$imageName}", $processedImage);
+
+            // Delete old image if exists
+            if ($user->profile_image) {
+                Storage::disk('public')->delete("user-image/{$user->profile_image}");
+            }
+
+            // Update user's profile image
+            $user->update(['profile_image' => $imageName]);
+
+            // Prepare response data
             $data['details'] = $user;
-            return  $this->sendCommonResponse('false', "", $data, 'data save successfully', '', ProjectConstants::HTTP_OK);
+
+            return $this->sendCommonResponse(false, "", $data, 'Profile image updated successfully', '', ProjectConstants::HTTP_OK);
         } catch (ValidationException $e) {
             return $this->sendCommonResponse(true, 'validation', '', $e->errors(), '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
         } catch (\Exception $e) {
-            Log::channel('daily')->info('saveProfileImage  Api log \n: ' . $e->getMessage());
-            return $this->sendCommonResponse(true, 'error', '', 'something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+            Log::channel('daily')->info('saveProfileImage Api log \n: ' . $e->getMessage());
+            return $this->sendCommonResponse(true, 'error', '', 'Something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -789,7 +842,7 @@ class ProfileController extends BaseController
     public function getDataWithStep($stepName, $user)
     {
         if ($stepName == 'step1') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')
                 ->with(['resume' => function ($query) {
                     $query->select('id', 'user_id', 'resume_url');
                 }])
@@ -803,19 +856,19 @@ class ProfileController extends BaseController
         }
 
         if ($stepName == 'step2') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')->with('subCategory:id,name,category_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')->with('subCategory:id,name,category_id')
                 ->withAvg('ratings', 'rating_number')
                 ->find($user->id);
             return $details =  $userData;
         }
         if ($stepName == 'step3') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')->with('skills:id,name')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')->with('skills:id,name')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step4') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')
                 ->withAvg('ratings', 'rating_number')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'profile_headline');
@@ -825,25 +878,25 @@ class ProfileController extends BaseController
         }
 
         if ($stepName == 'step5') {
-            $userData = User::select("id", "name",'last_name', 'profile_image', 'country_id', 'role_id')->with('userExperiences')
+            $userData = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id')->with('userExperiences')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step6') {
-            $userData = User::select("id", "name",'last_name', 'profile_image', 'country_id', 'role_id')->with('userEducation')
+            $userData = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id')->with('userEducation')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $userData;
         }
 
         if ($stepName == 'step7') {
-            $data['language'] = User::select("id", "name", 'last_name','profile_image', 'country_id', 'role_id')->with('userLanguage')
+            $data['language'] = User::select("id", "name", 'last_name', 'profile_image', 'country_id', 'role_id')->with('userLanguage')
                 ->withAvg('ratings', 'rating_number')->find($user->id);
             return $details =  $data;
         }
 
         if ($stepName == 'step8') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'about_yourself');
                 }])
@@ -853,7 +906,7 @@ class ProfileController extends BaseController
         }
 
         if ($stepName == 'step9') {
-            $userData = User::select('id', 'name', 'last_name','profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'hourly_rate', 'services_rate', 'income_per_hour');
                 }])
@@ -864,15 +917,15 @@ class ProfileController extends BaseController
 
 
         if ($stepName == 'step10') {
-            $userData = User::select('id', 'name','last_name', 'profile_image', 'country_id', 'role_id')
+            $userData = User::select('id', 'name', 'last_name', 'profile_image', 'country_id', 'role_id')
                 ->with(['userDetails' => function ($query) {
                     $query->select('id', 'user_id', 'date_of_birth', 'street_address', 'apt_suite', 'city', 'state_provience', 'zip_postalcode', 'phone_number');
                 }])
                 ->withAvg('ratings', 'rating_number')
                 ->find($user->id);
-                if(isset($userData->userDetails) && !empty($userData->userDetails)){
-                    $userData->userDetails->country = @$userData->country_name;
-                }
+            if (isset($userData->userDetails) && !empty($userData->userDetails)) {
+                $userData->userDetails->country = @$userData->country_name;
+            }
             return $details =  $userData;
         }
     }

@@ -14,9 +14,16 @@ use Illuminate\Support\Facades\Crypt;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\MailService;
 
 class ForgotpasswordController extends BaseController
 {
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
 
     public function sendForgotPassword(Request $request)
     {
@@ -31,7 +38,7 @@ class ForgotpasswordController extends BaseController
                 throw new Exception('User not found');
             }
             $token = Crypt::encrypt($user->id);
-            $resetPasswordLink =  ProjectConstants::RESET_PASSWORD_LINK.$token;
+            $resetPasswordLink =  ProjectConstants::RESET_PASSWORD_LINK . $token;
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $user->email], // Condition to check
                 [
@@ -40,9 +47,10 @@ class ForgotpasswordController extends BaseController
                 ]
             );
             $user->resetPasswordLink = $resetPasswordLink;
-            Mail::to($user->email)->send(new ForgotPasswordMail($user));
+            $this->mailService->safeSend($user->email, new ForgotPasswordMail($user), 'sendForgotPassword mail');
+            // Mail::to($user->email)->send(new ForgotPasswordMail($user));
             $data['resetPasswordLink'] = $resetPasswordLink;
-            return  $this->sendCommonResponse('false', "",'', 'Forgotpassword mail send successfully. Check your email inbox.', "", ProjectConstants::HTTP_OK);
+            return  $this->sendCommonResponse('false', "", '', 'Forgotpassword mail send successfully. Check your email inbox.', "", ProjectConstants::HTTP_OK);
         } catch (ValidationException $e) {
             return $this->sendCommonResponse(true, 'validation', '', $e->errors(), '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
         } catch (\Exception $e) {
@@ -53,8 +61,8 @@ class ForgotpasswordController extends BaseController
 
     public function changeForgotPassword(Request $request)
     {
-        
-        
+
+
         try {
 
             $request->validate([
@@ -75,16 +83,16 @@ class ForgotpasswordController extends BaseController
                 if ($createdAt->diffInMinutes(Carbon::now()) > 60) {
                     throw new Exception('Token has expired. Please request a new password reset.');
                 }
-                $userData = User::where('email',$user->email)->where('id',$user->id)->first();
+                $userData = User::where('email', $user->email)->where('id', $user->id)->first();
                 $userData->password = bcrypt($request->password);
                 $userData->save();
                 DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-            }else{
+            } else {
                 throw new Exception('something went wrong');
             }
-           
-            
-        return  $this->sendCommonResponse('false', "", '', 'Password reset successfully', "", ProjectConstants::HTTP_OK);
+
+
+            return  $this->sendCommonResponse('false', "", '', 'Password reset successfully', "", ProjectConstants::HTTP_OK);
         } catch (ValidationException $e) {
             return $this->sendCommonResponse(true, 'validation', '', $e->errors(), '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
         } catch (\Exception $e) {

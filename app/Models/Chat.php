@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Chat extends Model
 {
-    protected $fillable =  ['user_one_id', 'user_two_id'];
+    protected $fillable =  ['user_one_id', 'user_two_id','contract_id'];
     protected $hidden = [
         'created_at',
         'updated_at',

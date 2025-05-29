@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreign('proposal_id')->references('id')->on('proposals');
             $table->unsignedBigInteger('freelancer_id')->nullable();
             $table->foreign('freelancer_id')->references('id')->on('users');
+            $table->unsignedBigInteger('client_id')->nullable();
+            $table->foreign('client_id')->references('id')->on('users');
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
             $table->enum('type', ['hourly', 'fixed'])->default('hourly'); // Contract type (hourly or fixed-price)

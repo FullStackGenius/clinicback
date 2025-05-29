@@ -34,6 +34,8 @@ class User extends Authenticatable
         'remember_token',
         'role_id',
         'country_id',
+        'star_rating',
+        'total_hours',
 
     ];
 

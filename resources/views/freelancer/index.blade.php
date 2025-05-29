@@ -71,8 +71,12 @@
                                                 </td>
                                                 <td>
                                                     <div class="d-flex gap-2">
-                                                        <a href="{{ route('freelancer.show', $user->id) }}" class="btn btn-primary btn-sm">
+                                                        <a href="{{ route('freelancer.show', $user->id) }}" class="btn btn-warning btn-sm">
                                                             <i class="fas fa-eye"></i> View
+                                                        </a>
+
+                                                        <a href="{{ route('freelancer.edit', $user->id) }}" class="btn btn-primary btn-sm">
+                                                            <i class="fas fa-edit"></i> Edit
                                                         </a>
                                                         <form action="{{ route('freelancer.destroy', $user->id) }}" method="POST" id="deleteUser{{ $user->id }}">
                                                             @csrf

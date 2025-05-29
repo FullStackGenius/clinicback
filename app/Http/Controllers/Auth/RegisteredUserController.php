@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Constants\ProjectConstants;
 use App\Http\Controllers\Controller;
+use App\Mail\ThankYouForSignup;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Mail;
+use App\Services\MailService;
 
 class RegisteredUserController extends Controller
 {
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
     /**
      * Display the registration view.
      */
@@ -33,7 +42,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -50,18 +59,22 @@ class RegisteredUserController extends Controller
         return redirect(route('dashboard', absolute: false));
     }
 
-    public function getVerifyYourEmail($token = null){
+    public function getVerifyYourEmail($token = null)
+    {
         $token = Crypt::decrypt($token);
-        if(empty($token)){
+        if (empty($token)) {
             return redirect(route('login'));
         }
         $user =  User::find($token);
-        if(empty($user)){
+        if (empty($user)) {
             return redirect(route('login'));
         }
-       $user->email_verified_at = now();
-       $user->user_status = 1;
-       $user->save();
-       return redirect(ProjectConstants::FRONTEND_PATH.'\sign-in');
+        $user->email_verified_at = now();
+        $user->user_status = 1;
+        $user->save();
+        $userData = User::find($user->id);
+        $this->mailService->safeSend($userData->email,new ThankYouForSignup($userData),'getVerifyYourEmail mail');
+        //Mail::to($userData->email)->send(new ThankYouForSignup($userData));
+        return redirect(ProjectConstants::FRONTEND_PATH . '/sign-in?verified=1');
     }
 }

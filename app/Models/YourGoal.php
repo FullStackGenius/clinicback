@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class YourGoal extends Model
 {
-    protected $fillable = ['name', 'icon_image'];
+    protected $fillable = ['name', 'icon_image','status'];
 
     public function getIconImagePathAttribute()
     {

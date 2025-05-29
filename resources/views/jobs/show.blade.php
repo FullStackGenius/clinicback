@@ -55,7 +55,7 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <strong>Description:</strong>
-                                    <p>{{ $jobDetails->description }}</p>
+                                    <p>{!! $jobDetails->description !!}</p>
                                 </div>
                                 <div class="mb-3">
                                     <strong>Client Name:</strong>

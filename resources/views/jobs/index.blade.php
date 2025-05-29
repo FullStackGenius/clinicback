@@ -70,8 +70,8 @@
                                                 <td>{{ @$job->title }}</td>
                                                 <td>
                                                     <div class="description-container">
-                                                        <span class="short-description">{{ Str::limit(@$job->description, 60) }}</span>
-                                                        <span class="full-description" style="display:none;">{{ @$job->description }}</span>
+                                                        <span class="short-description">{!! Str::limit(strip_tags($job->description), 60) !!}</span>
+                                                        <span class="full-description" style="display:none;">{!! $job->description !!}</span>
                                                         @if(strlen(@$job->description) > 60)
                                                             <a href="javascript:void(0)" class="read-more-btn">Read More</a>
                                                         @endif
@@ -96,10 +96,23 @@
                                                 <td><a href="{{ route('client.show', @$job->clientUser->id) }}">{{ ucfirst(@$job->clientUser->name) }} {{ @$job->clientUser->last_name }}</a></td>
                                                 <td><p title="{{ @$job->created_at }}">{{ @$job->created_at->diffForHumans() }}</p></td>
                                                 <td><a href="{{ route('job-proposal', @$job->id) }}" class="btn btn-primary btn-sm mb-2">View Proposal</a></td>
+                                                
                                                 <td style="display: flex;column-gap: 5px;">
                                                     <a href="{{ route('jobs.show', @$job->id) }}" class="btn btn-primary btn-sm">
                                                         <i class="fas fa-eye"></i>
                                                         Details</a>
+                                                        <a href="{{ route('jobs.edit', @$job->id) }}" class="btn btn-success btn-sm">
+                                                            <i class="fas fa-edit"></i>
+                                                            Edit</a>
+
+                                                            <form action="{{ route('jobs.destroy', @$job->id) }}" method="POST" id="deleteUser{{ @$job->id }}">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button class="btn btn-danger btn-sm deleteUserButton" type="button" data-id="{{ $job->id }}">
+                                                                    <i class="fas fa-trash"></i> Delete
+                                                                </button>
+                                                            </form>
+                                                      
                                                 </td>
                                             </tr>
                                        
@@ -143,6 +156,27 @@
                     $this.text('Read More');
                 }
             });
+            
+            $(document).on('click', '.deleteUserButton', function() {
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        let id = $(this).data('id');
+                        $('#deleteUser' + id).submit();
+                    }
+                });
+            });
+
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 3000);
         });
     </script>
 @endpush

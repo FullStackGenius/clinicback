@@ -385,6 +385,80 @@
                     </ul>
                 </li>
 
+                <li
+                class="nav-item {{ request()->routeIs('resources*') || request()->routeIs('resource-category*') ? 'menu-open' : '' }}">
+                <a href="javascript:void(0)"
+                    class="nav-link {{ request()->routeIs('resources*') || request()->routeIs('resource-category*') ? 'active' : '' }}">
+
+                    <i class='fas fa-edit'></i>
+                    <p>
+                       Resources
+                        <i class="end fas fa-angle-right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item {{ request()->routeIs('resource-category*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link">
+
+                            <i class='fa fa-globe'></i>
+                            <p>
+                                Category
+                                <i class="end fas fa-angle-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('resource-category.index') }}"
+                                    class="nav-link {{ request()->routeIs('resource-category.index') || request()->routeIs('resource-category.edit')  ? 'active' : '' }}">
+
+                                    <i class='fas fa-arrow-right'></i>
+                                    <p>All Category</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('resource-category.create') }}"
+                                    class="nav-link {{ request()->routeIs('resource-category.create') ? 'active' : '' }}">
+
+                                    <i class='fas fa-arrow-right'></i>
+                                    <p>Add Category</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <ul class="nav nav-treeview">
+                    <li class="nav-item {{ request()->routeIs('resources*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link">
+
+                            <i class='fa fa-map'></i>
+                            <p>
+                                Resource Data
+                                <i class="end fas fa-angle-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('resources.index') }}"
+                                    class="nav-link {{ request()->routeIs('resources.index') || request()->routeIs('resources.edit') ? 'active' : '' }}">
+
+                                    <i class='fas fa-arrow-right'></i>
+                                    <p>All Resource Data</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('resources.create') }}"
+                                    class="nav-link {{ request()->routeIs('resources.create') ? 'active' : '' }}">
+
+                                    <i class='fas fa-arrow-right'></i>
+                                    <p>Add Resource Data</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
                 <li class="nav-item">
                     <a href="{{ route('profile.edit') }}"
                         class="nav-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">

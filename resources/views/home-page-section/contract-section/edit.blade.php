@@ -63,7 +63,7 @@
                                     <div class="mb-3">
                                         <label for="description" class="form-label">Description</label>
                                         <textarea id="summernote" name="content">{{ @$websitePageContent->content }}</textarea>
-                                        @error('description')
+                                        @error('content')
                                             <div class="error" style="color: red;">{{ $message }}</div>
                                         @enderror
                                     </div>

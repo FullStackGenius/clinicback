@@ -9,6 +9,8 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResourceCategoryController;
+use App\Http\Controllers\ResourceDataController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\SubCategoryController;
@@ -24,11 +26,12 @@ Route::get('/', function () {
     return redirect('/login');
 });
 Route::get('/test', function () {
-    $id = 12345;
-    $encoded = encodeId($id);
-    $decoded = decodeId($encoded);
+    // $id = 12345;
+    // $encoded = encodeId($id);
+    // $decoded = decodeId($encoded);
     
-    echo "Encoded: $encoded, Decoded: $decoded";
+    // echo "Encoded: $encoded, Decoded: $decoded";
+    echo phpinfo();
 });
 Route::get('/error', function () {
     return view('errors.custom');
@@ -49,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('skill', SkillController::class);
     Route::resource('category', CategoryController::class);
+    Route::resource('resource-category', ResourceCategoryController::class);
     Route::resource('subcategory', SubCategoryController::class);
     Route::resource('your-experience', YourExperienceController::class);
     Route::resource('your-goal', YourGoalController::class);
@@ -58,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('settings', SettingController::class);
     Route::resource('language', LanguageController::class);
     Route::resource('country', CountryController::class);
+    Route::resource('resources', ResourceDataController::class);
 
     Route::resource('client', ClientController::class);
     Route::prefix('home')->group(function () {
@@ -76,8 +81,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('jobs')->group(function () {
         Route::get('/{userId?}', [JobController::class, 'index'])->name('jobs.index');
         Route::get('show/{id}', [JobController::class, 'show'])->name('jobs.show');
+        Route::get('edit/{id}', [JobController::class, 'edit'])->name('jobs.edit');
+        Route::put('update/{id}', [JobController::class, 'update'])->name('jobs.update');
         Route::post('assign-job', [JobController::class, 'assignJobToFreeklancer'])->name('jobs.assign-job');
         Route::post('contract-detail-ajax', [JobController::class, 'getContractDetailAjax'])->name('jobs.contract-detail-ajax');
+        Route::delete('jobs/{id}', [JobController::class, 'destroy'])->name('jobs.destroy');
+
     });
     Route::get('job-proposal/{jobId}', [JobController::class, 'jobProposal'])->name('job-proposal');
     Route::get('/test-mail', function () {

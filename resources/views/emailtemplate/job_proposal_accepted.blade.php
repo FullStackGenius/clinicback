@@ -62,7 +62,7 @@
             <p>Great news! Your proposal for the job titled "<strong>{{ ucfirst(@$project->title) }}</strong>" has been accepted by <strong>{{ ucfirst(@$project->clientUser->name) }} {{ @$project->clientUser->last_name }}</strong>.</p>
             <p>You are now one step closer to starting this exciting project. Please review the project details and confirm the next steps with the client.</p>
             <p>Click the button below to view the project details:</p>
-            <a href="{{ \App\Constants\ProjectConstants::FRONTEND_PATH }}" class="button">View Project Details</a>
+            <a href="{{ \App\Constants\ProjectConstants::FRONTEND_PATH }}/projects" class="button">View Project Details</a>
         </div>
         
         <div class="footer">

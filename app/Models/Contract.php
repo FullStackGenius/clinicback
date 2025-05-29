@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Contract extends Model
 {
-    protected $fillable = ['project_id', 'freelancer_id', 'started_at', 'ended_at', 'type', 'amount', 'status', 'payment_type','proposal_id'];
+    protected $fillable = ['project_id', 'freelancer_id', 'started_at', 'ended_at', 'type', 'amount', 'status', 'payment_type','proposal_id','client_id'];
     protected $hidden = [
         'created_at',
         'updated_at',
@@ -24,6 +24,16 @@ class Contract extends Model
     public function freelancer(){
         // return $this->belongsTo(User::class,'freelancer_id','id');
         return $this->belongsTo(User::class,'freelancer_id','id');
+    }
+
+    public function client(){
+        // return $this->belongsTo(User::class,'freelancer_id','id');
+        return $this->belongsTo(User::class,'client_id','id');
+    }
+
+    public function contractPayment()
+    {
+        return $this->hasOne(ContractPayment::class);
     }
     
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('contract_id'); // Foreign Key referencing contracts
             $table->string('title'); // Milestone title (e.g., "Initial Draft", "Final Version")
+            $table->text('description')->nullable();
             $table->decimal('amount', 10, 2); // The payment amount for this milestone
             $table->decimal('completion_percentage', 5, 2)->default(0); // Percentage of work completed
             $table->enum('status', ['pending', 'completed', 'paid'])->default('pending'); // Status of milestone

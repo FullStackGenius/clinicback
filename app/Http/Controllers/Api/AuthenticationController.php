@@ -14,9 +14,18 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
+use App\Services\MailService;
 
 class AuthenticationController extends BaseController
 {
+
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
+
     public function accountType()
     {
         try {
@@ -51,6 +60,7 @@ class AuthenticationController extends BaseController
                         'name' => $request->first_name,
                         'last_name' => $request->last_name,
                         'email' => $request->email,
+                        'role_id' => $request->role_id,
                         'user_status' => 1,
                         'accept_condition' => 1,
                         'email_verified_at' => now(),
@@ -89,6 +99,7 @@ class AuthenticationController extends BaseController
                         'name' => $request->first_name,
                         'last_name' => $request->last_name,
                         'email' => $request->email,
+                        'role_id' => $request->role_id,
                         'user_status' => 1,
                         'accept_condition' => 1,
                         'email_verified_at' => now(),
@@ -134,8 +145,10 @@ class AuthenticationController extends BaseController
                     'completed_steps' => 0,
                     'next_step' => 0,
                 ]);
-                Mail::to($user->email)->send(new UserEmailVerification($user));
+                 $this->mailService->safeSend($user->email,new UserEmailVerification($user),'register mail');
+              //  Mail::to($user->email)->send(new UserEmailVerification($user));
                 $data['emailVerifyResendLink'] =  route('resend-email-verification-link', Crypt::encrypt($user->id));
+                $data['emailAddress'] =  $user->email;
             }
             if (!empty($data)) {
                 return  $this->sendCommonResponse('false', "", $data, 'User registered successfully. Please verify your email. Check your email inbox.', "", ProjectConstants::HTTP_OK);
@@ -171,6 +184,7 @@ class AuthenticationController extends BaseController
                     return $this->sendCommonResponse(true, 'error', '', 'Invalid credentials', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
                 }
                 if ($checkUser->user_status == ProjectConstants::STATUS_INACTIVE) {
+                    $success['emailAddress'] =  $checkUser->email;
                     $success['emailVerifyResendLink'] =  route('resend-email-verification-link', Crypt::encrypt($checkUser->id));
                     $success['unverified'] =  $checkUser->user_status;
                     return  $this->sendCommonResponse('false', "", $success, 'Your account requires email verification. Please verify your email to access the website.', '', ProjectConstants::HTTP_OK);
@@ -186,21 +200,35 @@ class AuthenticationController extends BaseController
 
             // For Google-based login or register
             if ($request->type == 'google') {
+                Log::channel('daily')->info('google login type request \n: ' . json_encode($request->all()));
                 $checkUser = User::where('google_id', $request->id)->first();
+             
                 if (empty($checkUser)) {
                     $request->validate([
                         'id' => 'required_if:type,google',
-                        'email' => 'required_if:type,google|email|unique:users,email',
+                        'email' => 'required_if:type,google|email',
                         'name' => 'required_if:type,google',
                     ]);
-                    $user = User::create([
-                        'google_id' => $request->id,
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'user_status' => 1,
-                        'accept_condition' => 1,
-                        'email_verified_at' => now(),
-                    ]);
+                    $checkUserEmail = User::where('email', $request->email)->first();
+                    if (!empty($checkUserEmail)) {
+                       
+                        $checkUserEmail->update([
+                            'google_id' => $request->id,
+                            'user_status' => 1,
+                            'accept_condition' => 1,
+                        ]);
+                     $user = $checkUserEmail;
+                    }else{
+                        $user = User::create([
+                            'google_id' => $request->id,
+                            'name' => $request->name,
+                            'email' => $request->email,
+                            'user_status' => 1,
+                            'accept_condition' => 1,
+                            'email_verified_at' => now(),
+                        ]);
+                    }
+                    
                     $user->userDetails()->create([
                         'completed_steps' => 0,
                         'next_step' => 0,
@@ -278,19 +306,20 @@ class AuthenticationController extends BaseController
         try {
             $token = Crypt::decrypt($token);
             if (empty($token)) {
-                return $this->sendCommonResponse(true, 'error', '', 'invalid link', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+                return $this->sendCommonResponse(true, 'error', '', 'Invalid or expired verification link.', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
             }
             $user =  User::find($token);
             if (empty($user)) {
-                return $this->sendCommonResponse(true, 'error', '', 'invalid link', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
+                return $this->sendCommonResponse(true, 'error', '', 'Invalid or expired verification link.', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);
             }
 
             $checkAlreadyVerify =  User::whereNotNull('email_verified_at')->where('id', $token)->first();
             if (!empty($checkAlreadyVerify)) {
-                return  $this->sendCommonResponse('false', "", '', 'user email already verified', "", ProjectConstants::HTTP_OK);
+                return  $this->sendCommonResponse('false', "", '', 'Email verification not required — already verified.', "", ProjectConstants::HTTP_OK);
             }
-            Mail::to($user->email)->send(new UserEmailVerification($user));
-            return  $this->sendCommonResponse('false', "", '', 'Email sent successfully', "", ProjectConstants::HTTP_OK);
+            $this->mailService->safeSend($user->email,new UserEmailVerification($user),'register mail');
+          //  Mail::to($user->email)->send(new UserEmailVerification($user));
+            return  $this->sendCommonResponse('false', "", '', 'Email sent! Please check your inbox to verify your address', "", ProjectConstants::HTTP_OK);
         } catch (\Exception $e) {
             Log::channel('daily')->info('resendEmailVerificationLink  Api log \n: ' . $e->getMessage());
             return $this->sendCommonResponse(true, 'error', '', 'something went wrong', '', ProjectConstants::HTTP_INTERNAL_SERVER_ERROR);

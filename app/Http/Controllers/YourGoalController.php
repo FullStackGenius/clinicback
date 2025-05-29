@@ -101,12 +101,14 @@ class YourGoalController extends Controller
             // }
             YourGoal::where('id', $id)->update([
                 'name'=> $request->name,
-                'icon_image' => $imageName
+                'icon_image' => $imageName,
+                'status' => $request->status
             ]);
             
         }else{
             YourGoal::where('id', $id)->update([
                 'name'=> $request->name,
+                'status' => $request->status
             ]);
         }
         return Redirect::back()->with('success', 'Data save successfully');
