@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('ratings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->unsignedBigInteger('rating_by')->nullable();
+            $table->foreign('rating_by')->references('id')->on('users');
+            $table->unsignedBigInteger('rating_to')->nullable();
+            $table->foreign('rating_to')->references('id')->on('users');
             $table->unsignedBigInteger('contract_id')->nullable();
             $table->foreign('contract_id')->references('id')->on('contracts');
             $table->text('review')->nullable();

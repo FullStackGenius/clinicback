@@ -189,8 +189,8 @@ class PageContentController extends BaseController
                     },
                     'ratings' => function ($query) {
                         // Calculate the average rating and group by user_id
-                        $query->selectRaw('user_id, AVG(rating_number) as average_rating')
-                            ->groupBy('user_id');  // This is the critical part to avoid the SQL error
+                        $query->selectRaw('rating_to, AVG(rating_number) as average_rating')
+                            ->groupBy('rating_to');  // This is the critical part to avoid the SQL error
                     },
                     'getHowLikeToWork',
                     'subCategory.getCategory'

@@ -26,19 +26,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::post('/stripe/account', [PaymentController::class, 'createAccount']);
-Route::post('/stripe/onboarding', [PaymentController::class, 'onboardingLink']);
-Route::get('/stripe/return', [PaymentController::class, 'return'])->name('stripe.return');
-Route::get('/stripe/refresh', [PaymentController::class, 'refresh'])->name('stripe.refresh');
-Route::post('/stripe/release', [PaymentController::class, 'releasePayment']);
-Route::post('payment-intent', [PaymentController::class, 'createPaymentIntent']);
-// Route::post('/contracts/release', [PaymentController::class, 'releaseToFreelancer']);
-Route::post('/contracts/payment-release-freelancer', [PaymentController::class, 'releasePaymentToFreelancer']);
-Route::get('/stripe/info', [PaymentController::class, 'getStripeAccountInfo']);
-Route::post('/contract-payment/store', [PaymentController::class, 'storeContractPaymentResponse']);
-Route::post('release-payment-to-freelancer', [PaymentController::class, 'releasePaymentToFreelancer'])->name('release-payment-to-freelancer');
-Route::post('/contract-balance', [PaymentController::class, 'getContractBalance'])->name('contract-balance');
-Route::post('/get-payment-transaction-detail', [PaymentController::class, 'getPaymentTransactionDetail'])->name('get-payment-transaction-detail');
-Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransaction'])->name('show-all-transaction');
+    Route::post('/stripe/onboarding', [PaymentController::class, 'onboardingLink']);
+    Route::get('/stripe/return', [PaymentController::class, 'return'])->name('stripe.return');
+    Route::get('/stripe/refresh', [PaymentController::class, 'refresh'])->name('stripe.refresh');
+    Route::post('/stripe/release', [PaymentController::class, 'releasePayment']);
+    Route::post('payment-intent', [PaymentController::class, 'createPaymentIntent']);
+    // Route::post('/contracts/release', [PaymentController::class, 'releaseToFreelancer']);
+    Route::post('/contracts/payment-release-freelancer', [PaymentController::class, 'releasePaymentToFreelancer']);
+    Route::get('/stripe/info', [PaymentController::class, 'getStripeAccountInfo']);
+    Route::post('/contract-payment/store', [PaymentController::class, 'storeContractPaymentResponse']);
+    Route::post('release-payment-to-freelancer', [PaymentController::class, 'releasePaymentToFreelancer'])->name('release-payment-to-freelancer');
+    Route::post('/contract-balance', [PaymentController::class, 'getContractBalance'])->name('contract-balance');
+    Route::post('/get-payment-transaction-detail', [PaymentController::class, 'getPaymentTransactionDetail'])->name('get-payment-transaction-detail');
+    Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransaction'])->name('show-all-transaction');
 
     // ProfileController controoller
     Route::post('save-freelance-exp', [ProfileController::class, 'saveFreelanceExp'])->name('save-freelance-exp');
@@ -76,7 +76,7 @@ Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransacti
         Route::post('save-project-work-scope', [ProjectController::class, 'saveProjectWorkScope'])->name('save-project-work-scope');
         Route::post('get-project-detail', [ProjectController::class, 'getProjectDetail'])->name('get-project-detail');
         Route::post('delete-your-project', [ProjectController::class, 'deleteYourJobProject'])->name('delete-your-project');
-        
+
         Route::post('save-project-type', [ProjectController::class, 'saveProjectType'])->name('save-project-type');
         Route::post('edit-project-details', [ProjectController::class, 'editProjectDetails'])->name('edit-project-details');
         Route::get('client-project', [ProjectController::class, 'clientProjectList'])->name('client-project');
@@ -90,7 +90,6 @@ Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransacti
         Route::post('get-contract-details', [JobContractController::class, 'getContractDetails'])->name('get-contract-details');
         Route::post('make-milestone-payment', [JobContractController::class, 'makeMilestonePayment'])->name('make-milestone-payment');
         Route::post('request-to-release-milestone-payment', [JobContractController::class, 'requestToReleaseMilestonePayment'])->name('request-to-release-milestone-payment');
-        
     });
 
     Route::post('/logout', [AuthenticationController::class, 'logout'])->name('logout');
@@ -102,13 +101,19 @@ Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransacti
     Route::get('get-client-contract', [FreelancerController::class, 'getClientContract'])->name('get-client-contract');
 
     Route::post('give-rating', [RatingController::class, 'giveRating'])->name('give-rating');
+    Route::post('get-rating', [RatingController::class, 'getRating'])->name('get-rating');
 
 
     Route::prefix('chat')->group(function () {
         Route::get('start/{userId?}/{contractId?}', [ChatController::class, 'startChat'])->name('chat.start');
         Route::post('send-message', [ChatController::class, 'sendMessage'])->name('chat.send-message');
     });
+
+
+    Route::post('write-reply', [RatingController::class, 'writeReply'])->name('write-reply');
 });
+Route::post('get-freelaner-reviews', [RatingController::class, 'getFreelancerReviewRating'])->name('get-freelaner-reviews');
+Route::post('get-rating-reply', [RatingController::class, 'getRatingReply'])->name('get-rating-reply');
 
 Route::get('account-type', [AuthenticationController::class, 'accountType'])->name('account-type');
 Route::get('resend-email-verification-link/{token}', [AuthenticationController::class, 'resendEmailVerificationLink'])->name('resend-email-verification-link');
