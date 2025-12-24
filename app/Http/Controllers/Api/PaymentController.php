@@ -28,6 +28,9 @@ use Stripe\Account;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Services\MailService;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class PaymentController extends BaseController
 {
@@ -293,6 +296,8 @@ class PaymentController extends BaseController
             $contract->status = 'active';
             $contract->save();
             $this->saveDataInAllTransactionTable($contractPayment, 'contract', $contract->amount, Auth::user()->id, $receiverId = null);
+            $contractSummaryLink = $this->createPdfFileForContract($contract->id);
+            $contract->contractSummaryLink = $contractSummaryLink;
             $this->mailService->safeSend($contract->freelancer->email, new JobProposalAccepted($contract->project, $contract->proposal, $contract), "responseToProposal freelancer mail");
             $this->mailService->safeSend($contract->client->email, new ProposalAcceptedByFreelancer($contract->project, $contract->proposal, $contract), "responseToProposal client mail");
             $data['contract_payment'] = $contractPayment;
@@ -528,6 +533,84 @@ class PaymentController extends BaseController
             $relationObject->transaction()->save($transaction);
         } catch (\Exception $e) {
             Log::channel('daily')->error('saveDataInAllTransactionTable ERROR: ' . $e->getMessage());
+        }
+    }
+
+    public function createPdfFileForContract($contractId)
+    {
+        $contract = Contract::with(['proposal', 'project', 'freelancer', 'client'])
+            ->findOrFail($contractId);
+
+        $contractPayment = ContractPayment::where('contract_id', $contractId)
+            ->firstOrFail();
+
+        $milestones = Milestone::where('contract_id', $contractId)->get();
+
+        $pdf = Pdf::loadView('pdf.contract_details', [
+            'contract'         => $contract,
+            'contractPayment' => $contractPayment,
+            'milestones'      => $milestones
+        ])->setPaper('A4', 'portrait');
+        $fileName = 'contract-detail-' . $contractPayment->id . '.pdf';
+        $filePath = 'contract-detail/' . $fileName;
+        Storage::disk('public')->put($filePath, $pdf->output());
+
+        $saveContactPdf = ContractPayment::where('contract_id', $contractId)->first();
+        $saveContactPdf->contract_detail_pdf = $filePath;
+        $saveContactPdf->save();
+
+        return $filePath;
+    }
+
+
+    public function getPaymentTransactionInvoice(Request $request)
+    {
+        try {
+            $milestone_id = $request->milestone_id;
+
+            $milestonePaymentDetail = MilestonePaymentDetail::with([
+                'milestone',
+                'milestone.contract',
+                'milestone.contract.freelancer',
+                'milestone.contract.client',
+                'milestone.contract.project'
+            ])->where('milestone_id', $milestone_id)->firstOrFail();
+
+            $fileName = 'milestone-invoice-' . $milestone_id . '.pdf';
+            $filePath = 'milestone-invoice/' . $fileName;
+
+            // ✅ CHECK: If PDF already exists
+            if (!Storage::disk('public')->exists($filePath)) {
+
+                $pdf = Pdf::loadView('pdf.single-milestone-invoice', [
+                    'milestonePaymentDetail' => $milestonePaymentDetail,
+                ])->setPaper('A4', 'portrait');
+
+                Storage::disk('public')->put($filePath, $pdf->output());
+            }
+
+            return $this->sendCommonResponse(
+                false,
+                "",
+                [
+                    'milestone_invoice_link' => config('app.url') . "/storage/" . $filePath,
+                    'milestonePaymentDetail' => $milestonePaymentDetail
+                ],
+                'Data fetched successfully',
+                "",
+                ProjectConstants::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            Log::channel('daily')->error('Milestone Invoice ERROR: ' . $e->getMessage());
+
+            return $this->sendCommonResponse(
+                true,
+                'error',
+                '',
+                $e->getMessage(),
+                '',
+                ProjectConstants::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 }

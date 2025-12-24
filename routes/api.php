@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('release-payment-to-freelancer', [PaymentController::class, 'releasePaymentToFreelancer'])->name('release-payment-to-freelancer');
     Route::post('/contract-balance', [PaymentController::class, 'getContractBalance'])->name('contract-balance');
     Route::post('/get-payment-transaction-detail', [PaymentController::class, 'getPaymentTransactionDetail'])->name('get-payment-transaction-detail');
+     Route::post('/get-payment-transaction-invoice', [PaymentController::class, 'getPaymentTransactionInvoice'])->name('get-payment-transaction-invoice');
     Route::get('/show-all-transaction', [PaymentController::class, 'showAllTransaction'])->name('show-all-transaction');
 
     // ProfileController controoller

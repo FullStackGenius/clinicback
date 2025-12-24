@@ -14,12 +14,16 @@ use App\Http\Controllers\ResourceDataController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\WebsitePageContentController;
 use App\Http\Controllers\YourExperienceController;
 use App\Http\Controllers\YourGoalController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/generate-pdf', [TestController::class, 'generatePdf'])->name('generate.pdf');
+
 
 Route::get('/', function () {
     // return view('welcome');
